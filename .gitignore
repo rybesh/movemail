@@ -1,7 +1,2 @@
-.Python
-bin
-include
-lib
-local
 secrets.py
 *.pyc
