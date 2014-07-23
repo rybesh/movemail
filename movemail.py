@@ -4,6 +4,7 @@ import xml.etree.ElementTree as etree
 import email
 import imaplib
 import smtplib
+import os
 import re
 import sys
 
@@ -161,7 +162,8 @@ if DEBUG:
     tobox_smtp.set_debuglevel(1)
 
 try:
-    filters = load_filters('mailFilters.xml')
+    filters = load_filters(
+        os.path.join(os.path.dirname(__file__), 'mailFilters.xml'))
     run_filters(frombox, filters, smtp=tobox_smtp, expunge=False)
     movemail(frombox, tobox)
     run_filters(tobox, filters)
