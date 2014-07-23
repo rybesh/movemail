@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from lxml import etree
+import xml.etree.ElementTree as etree
 import email
 import imaplib
 import smtplib
