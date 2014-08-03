@@ -54,6 +54,8 @@ class Filter:
                 ['HEADER', '"List-Id"', '"%s"' % match.group('listid')])
     def handle_label(self, value):
         self.labels.append(value)
+    def handle_smartlabeltoapply(self, value):
+        self.labels.append(value)
     def handle_forwardto(self, value):
         self.forwardees.append(value)
     def add_search_criteria(self, name, value):
