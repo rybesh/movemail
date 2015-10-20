@@ -8,7 +8,8 @@ import os
 import re
 import sys
 
-from secrets import *
+from secrets import (FROM_IMAP, FROM_USER, FROM_PASSWORD,
+                     TO_IMAP, TO_SMTP, TO_USER, TO_PASSWORD)
 
 DEBUG = False
 
@@ -18,8 +19,10 @@ if DEBUG:
 ATOM_NS = 'http://www.w3.org/2005/Atom'
 APPS_NS = 'http://schemas.google.com/apps/2006'
 
+
 class Filter:
     listre = re.compile(r'list:\((?P<listid>.+)\)')
+
     def __init__(self, entry):
         self.id = entry.find('{%s}id' % ATOM_NS).text
         self.msg_ids = []
@@ -47,21 +50,27 @@ class Filter:
         if self.star:
             self.labels.append('[Gmail]/Starred')
         self.error = None
+
     def handle_hastheword(self, value):
         match = self.listre.match(value)
         if match:
             self.criteria.extend(
                 ['HEADER', '"List-Id"', '"%s"' % match.group('listid')])
+
     def handle_label(self, value):
         self.labels.append(value)
+
     def handle_smartlabeltoapply(self, value):
         self.labels.append(value)
+
     def handle_forwardto(self, value):
         self.forwardees.append(value)
+
     def add_search_criteria(self, name, value):
         self.criteria.append('HEADER')
         self.criteria.append(name.upper())
         self.criteria.append('"%s"' % value)
+
     def run(self, account, smtp=None):
         try:
             code, response = account.search(None, *self.criteria)
@@ -83,6 +92,7 @@ class Filter:
         except imaplib.IMAP4.error as e:
             self.error = e
 
+
 def fetch_message(account, msg_id):
     code, msg_data = account.fetch(msg_id, '(RFC822)')
     for response_part in msg_data:
@@ -90,8 +100,10 @@ def fetch_message(account, msg_id):
             return email.message_from_string(response_part[1])
     return None
 
+
 def forward(account, msg_id, smtp, recipients):
-    if not smtp: return
+    if not smtp:
+        return
     msg = fetch_message(account, msg_id)
     if msg:
         for recipient in recipients:
@@ -100,11 +112,11 @@ def forward(account, msg_id, smtp, recipients):
             if DEBUG:
                 print >> sys.stderr, \
                     'Forwarding "%s" to <%s>' % (subject, recipient)
-            #msg.replace_header('From', sender)
             msg.replace_header('To', recipient)
             msg.replace_header('Subject', 'Fwd: %s' % subject)
             del msg['CC']
             smtp.sendmail(sender, recipient, msg.as_string())
+
 
 def movemail(from_account, to_account):
     from_account.select('INBOX')
@@ -113,21 +125,27 @@ def movemail(from_account, to_account):
     for msg_id in msg_ids[0].split():
         msg = fetch_message(from_account, msg_id)
         if msg:
-          if DEBUG:
-              for header in [ 'from', 'subject' ]:
-                  print >> sys.stderr, '%s: %s' % (header.upper(), msg[header])
-          to_account.append('INBOX', '', '', msg.as_string())
-          code, response = from_account.store(msg_id, '+FLAGS', r'(\Deleted)')
-    
+            if DEBUG:
+                for header in ['from', 'subject']:
+                    print >> sys.stderr, \
+                        '%s: %s' % (header.upper(), msg[header])
+            to_account.append('INBOX', '', '', msg.as_string())
+            code, resp = from_account.store(msg_id, '+FLAGS', r'(\Deleted)')
+
+
 def close(accounts):
     for a in accounts:
-        try: a.close()
-        except: pass
+        try:
+            a.close()
+        except:
+            pass
         a.logout()
+
 
 def load_filters(filename):
     tree = etree.parse(filename)
-    return [ Filter(entry) for entry in tree.findall('{%s}entry' % ATOM_NS) ]
+    return [Filter(entry) for entry in tree.findall('{%s}entry' % ATOM_NS)]
+
 
 def run_filters(account, filters, smtp=None, expunge=True):
     account.select('INBOX')
