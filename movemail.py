@@ -2,11 +2,10 @@
 
 import email
 import imaplib
-import smtplib
 import sys
 
 from secrets import (FROM_IMAP, FROM_USER, FROM_PASSWORD,
-                     TO_IMAP, TO_SMTP, TO_USER, TO_PASSWORD)
+                     TO_IMAP, TO_USER, TO_PASSWORD)
 
 DEBUG = False
 
@@ -62,4 +61,3 @@ try:
     movemail(frombox, tobox)
 finally:
     close([frombox, tobox])
-    tobox_smtp.quit()
