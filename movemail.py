@@ -3,6 +3,9 @@
 import email
 import imaplib
 import sys
+import errno
+
+from socket import error as SocketError
 
 from secrets import (FROM_IMAP, FROM_USER, FROM_PASSWORD,
                      TO_IMAP, TO_USER, TO_PASSWORD)
@@ -45,19 +48,20 @@ def close(accounts):
         a.logout()
 
 
-frombox = imaplib.IMAP4_SSL(FROM_IMAP)
-frombox.login(FROM_USER, FROM_PASSWORD)
-
-tobox = imaplib.IMAP4_SSL(TO_IMAP)
-tobox.login(TO_USER, TO_PASSWORD)
-
-tobox_smtp = smtplib.SMTP(TO_SMTP, 587)
-tobox_smtp.starttls()
-tobox_smtp.login(TO_USER, TO_PASSWORD)
-if DEBUG:
-    tobox_smtp.set_debuglevel(1)
-
+frombox = tobox = None
 try:
+
+    frombox = imaplib.IMAP4_SSL(FROM_IMAP)
+    frombox.login(FROM_USER, FROM_PASSWORD)
+
+    tobox = imaplib.IMAP4_SSL(TO_IMAP)
+    tobox.login(TO_USER, TO_PASSWORD)
+
     movemail(frombox, tobox)
+
+except SocketError as e:
+    # ignore connection resets
+    if e.errno != errno.ECONNRESET:
+        raise
 finally:
     close([frombox, tobox])
