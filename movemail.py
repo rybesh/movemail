@@ -43,9 +43,9 @@ def close(accounts):
     for a in accounts:
         try:
             a.close()
+            a.logout()
         except:
             pass
-        a.logout()
 
 
 frombox = tobox = None
